@@ -1,6 +1,7 @@
+import java.io.Serializable;
 import java.math.BigInteger;
 
-public class Moves{
+public class Moves implements Serializable {
     private BigInteger move;
     private int weight;
 
@@ -36,6 +37,11 @@ public class Moves{
         }else {
             return false;
         }
+    }
+
+    @Override
+    public int hashCode() {
+        return move.hashCode();
     }
 
     public static int compare (Moves m1, Moves m2){

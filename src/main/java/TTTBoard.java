@@ -11,15 +11,18 @@ public class TTTBoard implements Board<Integer> {
         this.turn = turn;
     }
     public TTTBoard() {
-        // по умолчанию в начале игры поле пустое
         position = new TTTPiece[NUM_SQUARES];
         Arrays.fill(position, TTTPiece.E);
-        // Первый игрок ставит X
         turn = TTTPiece.X;
     }
     @Override
     public Piece getTurn() {
         return turn;
+    }
+    public void reset(){
+        position = new TTTPiece[NUM_SQUARES];
+        Arrays.fill(position, TTTPiece.E);
+        turn = TTTPiece.X;
     }
 
     @Override
@@ -33,7 +36,6 @@ public class TTTBoard implements Board<Integer> {
     public List<Integer> getLegalMoves() {
         ArrayList<Integer> legalMoves = new ArrayList<>();
         for (int i = 0; i < NUM_SQUARES; i++) {
-            // пустые клетки — допустимые ходы
             if (position[i] == TTTPiece.E) {
                 legalMoves.add(i);
             }
@@ -43,7 +45,6 @@ public class TTTBoard implements Board<Integer> {
 
     @Override
     public boolean isWin() {
-        // проверяем три строки, три столбца и две диагонали
         return
                 checkPos(0, 1, 2) || checkPos(3, 4, 5) || checkPos(6, 7, 8)
                         || checkPos(0, 3, 6) || checkPos(1, 4, 7) || checkPos(2, 5, 8)

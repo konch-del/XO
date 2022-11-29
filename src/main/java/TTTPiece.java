@@ -7,7 +7,7 @@ public enum TTTPiece implements Piece {
                 return TTTPiece.O;
             case O:
                 return TTTPiece.X;
-            default: // E, пустая клетка
+            default:
                 return TTTPiece.E;
         }
     }
@@ -18,7 +18,7 @@ public enum TTTPiece implements Piece {
                 return "X";
             case O:
                 return "O";
-            default: // E, пустая клетка
+            default:
                 return " ";
         }
     }

@@ -1,24 +1,20 @@
 public class Minimax {
-    // Находим наилучший из возможных результатов для первого игрока
+
     public static <Move> double minimax(Board<Move> board,
                                         Boolean maximizing, Piece originalPlayer, int maxDepth) {
-        // Базовый случай — достигнута финальная
-        // позиция или максимальная глубина поиска
         if (board.isWin() || board.isDraw() || maxDepth == 0) {
             return board.evaluate(originalPlayer);
         }
-        // Рекурсивный случай — максимизируйте свою выгоду или
-        // минимизируйте выгоду противника
         if (maximizing) {
-            double bestEval = Double.NEGATIVE_INFINITY; // результат выше
+            double bestEval = Double.NEGATIVE_INFINITY;
             for (Move move : board.getLegalMoves()) {
                 double result = minimax(board.move(move), false,
                         originalPlayer, maxDepth - 1);
                 bestEval = Math.max(result, bestEval);
             }
             return bestEval;
-        } else { // минимизация
-            double worstEval = Double.POSITIVE_INFINITY; // результат ниже
+        } else {
+            double worstEval = Double.POSITIVE_INFINITY;
             for (Move move : board.getLegalMoves()) {
                 double result = minimax(board.move(move), true,
                         originalPlayer, maxDepth - 1);
@@ -28,11 +24,9 @@ public class Minimax {
         }
     }
 
-    // Найти наилучший возможный ход из текущей
-    // позиции, просматривая maxDepth ходов вперед
     public static <Move> Move findBestMove(Board<Move> board, int maxDepth) {
         double bestEval = Double.NEGATIVE_INFINITY;
-        Move bestMove = null; // Наверняка не примет значение null
+        Move bestMove = null;
         for (Move move : board.getLegalMoves()) {
             double result = minimax(board.move(move), false,
                     board.getTurn(), maxDepth);
