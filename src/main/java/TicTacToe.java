@@ -109,6 +109,7 @@ public class TicTacToe {
                 System.out.println("Draw!");
                 break;
             }
+            agent.setPiece(TTTPiece.O);
             board = board.move(agent.move(board));
             System.out.println(board);
             if (board.isWin()) {
@@ -153,13 +154,17 @@ public class TicTacToe {
 
     public static void main(String[] args) throws InterruptedException, IOException, ClassNotFoundException {
         TicTacToe toe = new TicTacToe();
-        toe.training(20000);
+        /*toe.training(10);
         System.out.println("Agent");
         toe.agent.printStats();
         System.out.println("Agent2");
         toe.agent2.printStats();
         toe.saveAgent("Agent.ser", toe.getAgent());
-        toe.saveAgent("Agent2.ser", toe.getAgent2());
-        toe.runGameWithAgent(toe.getAgent());
+        toe.saveAgent("Agent2.ser", toe.getAgent2());*/
+        Agent a = toe.readAgent("Agent.ser");
+        a.setChance(1);
+        for(int i = 0; i < 10; i++) {
+            toe.runGameWithAgent(a);
+        }
     }
 }

@@ -1,5 +1,4 @@
 import org.jgrapht.graph.DefaultWeightedEdge;
-import org.jgrapht.graph.DirectedAcyclicGraph;
 import org.jgrapht.graph.DirectedWeightedMultigraph;
 
 import java.io.Serializable;
@@ -49,6 +48,8 @@ public class Agent implements Serializable {
 
     public void setChance(int chance) {
         this.chance = chance;
+        this.random = null;
+        fillRandom();
     }
 
     public TTTPiece getPiece() {
@@ -97,22 +98,25 @@ public class Agent implements Serializable {
         Moves currentMoves = xMoves.vertexSet().stream().filter(o -> o.getMove().equals(moves)).findFirst().get();
         Moves nextMove;
         List<Moves> nextMoves = xMoves.outgoingEdgesOf(currentMoves).stream().map(o -> (xMoves.getEdgeTarget(o))).collect(Collectors.toList());
-        DefaultWeightedEdge edge = nextMoves.stream()
-                .map(o -> xMoves.getEdge(currentMoves, o))
-                .max((o1, o2) -> {if(xMoves.getEdgeWeight(o1) - xMoves.getEdgeWeight(o2) > 0){
-                    return 1;
-                }else{
-                    if(xMoves.getEdgeWeight(o1) - xMoves.getEdgeWeight(o2) < 0){
-                        return -1;
+        List<BigInteger> legalMoves = board.getLegalMoves().stream().map(o -> BigInteger.valueOf(o)).collect(Collectors.toList());
+        nextMoves = nextMoves.stream().filter(o -> legalMoves.contains(o.getMove().mod(BigInteger.valueOf(10)).subtract(BigInteger.valueOf(1)))).collect(Collectors.toList());
+        if(random() == 1 && !nextMoves.isEmpty()){
+            DefaultWeightedEdge edge = nextMoves.stream()
+                    .map(o -> xMoves.getEdge(currentMoves, o))
+                    .max((o1, o2) -> {if(xMoves.getEdgeWeight(o1) - xMoves.getEdgeWeight(o2) > 0){
+                        return 1;
+                    }else{
+                        if(xMoves.getEdgeWeight(o1) - xMoves.getEdgeWeight(o2) < 0){
+                            return -1;
+                        }
                     }
-                }
-                    return 0;
-                }).get();
-        if(random() == 1){
+                        return 0;
+                    }).get();
             nextMove = xMoves.getEdgeTarget(edge);
             return nextMove.getMove().mod(BigInteger.valueOf(10)).intValue();
         }else{
             ArrayList<Moves> newMovies = new ArrayList<>(xMoves.outgoingEdgesOf(currentMoves).stream().map(o -> (xMoves.getEdgeTarget(o))).collect(Collectors.toList()));
+            newMovies = (ArrayList<Moves>) newMovies.stream().filter(o -> board.getLegalMoves().contains(o.getMove())).collect(Collectors.toList());
             List<Integer> newMoviess = newMovies.stream()
                     .map(Moves::getMove)
                     .map(o -> o.mod(BigInteger.valueOf(10)))
@@ -131,22 +135,25 @@ public class Agent implements Serializable {
         Moves currentMoves = oMoves.vertexSet().stream().filter(o -> o.getMove().equals(moves)).findFirst().get();
         Moves nextMove;
         List<Moves> nextMoves = oMoves.outgoingEdgesOf(currentMoves).stream().map(o -> (oMoves.getEdgeTarget(o))).collect(Collectors.toList());
-        DefaultWeightedEdge edge = nextMoves.stream()
-                .map(o -> oMoves.getEdge(currentMoves, o))
-                .max((o1, o2) -> {if(oMoves.getEdgeWeight(o1) - oMoves.getEdgeWeight(o2) > 0){
-                    return 1;
-                }else{
-                    if(oMoves.getEdgeWeight(o1) - oMoves.getEdgeWeight(o2) < 0){
-                        return -1;
+        List<BigInteger> legalMoves = board.getLegalMoves().stream().map(o -> BigInteger.valueOf(o)).collect(Collectors.toList());
+        nextMoves = nextMoves.stream().filter(o -> legalMoves.contains(o.getMove().mod(BigInteger.valueOf(10)).subtract(BigInteger.valueOf(1)))).collect(Collectors.toList());
+        if(random() == 1 && !nextMoves.isEmpty()){
+            DefaultWeightedEdge edge = nextMoves.stream()
+                    .map(o -> oMoves.getEdge(currentMoves, o))
+                    .max((o1, o2) -> {if(oMoves.getEdgeWeight(o1) - oMoves.getEdgeWeight(o2) > 0){
+                        return 1;
+                    }else{
+                        if(oMoves.getEdgeWeight(o1) - oMoves.getEdgeWeight(o2) < 0){
+                            return -1;
+                        }
                     }
-                }
-                    return 0;
-                }).get();
-        if(random() == 1){
+                        return 0;
+                    }).get();
             nextMove = oMoves.getEdgeTarget(edge);
             return nextMove.getMove().mod(BigInteger.valueOf(10)).intValue();
         }else{
             ArrayList<Moves> newMovies = new ArrayList<>(oMoves.outgoingEdgesOf(currentMoves).stream().map(o -> (oMoves.getEdgeTarget(o))).collect(Collectors.toList()));
+            newMovies = (ArrayList<Moves>) newMovies.stream().filter(o -> board.getLegalMoves().contains(o.getMove())).collect(Collectors.toList());
             //newMovies.remove(oMoves.getEdgeTarget(edge));
             List<Integer> newMoviess = newMovies.stream()
                     .map(Moves::getMove)
