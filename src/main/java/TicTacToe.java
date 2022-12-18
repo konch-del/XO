@@ -1,10 +1,24 @@
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartUtils;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.data.xy.DefaultXYDataset;
+import org.jfree.data.xy.XYDataset;
+
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 public class TicTacToe {
     private TTTBoard board = new TTTBoard();
     private Scanner scanner = new Scanner(System.in);
-    private Agent agent = new Agent(30);
-    private Agent agent2 = new Agent(30);
+    private Agent agent = new Agent(30, 0.2);
+    private Agent agent2 = new Agent(30, 0.7);
+    private List<Double> agentX = new ArrayList<>();
+    private List<Double> agentO = new ArrayList<>();
+    private List<Double> agent2X = new ArrayList<>();
+    private List<Double> agent2O = new ArrayList<>();
     private Integer getPlayerMove() {
         Integer playerMove = -1;
         while (!board.getLegalMoves().contains(playerMove)) {
@@ -95,6 +109,13 @@ public class TicTacToe {
                 }
             }
             board.reset();
+            if(agent.getPiece().equals(TTTPiece.X)){
+                agentX.add(agent.getMaxReward().get("X"));
+                agent2O.add(agent2.getMaxReward().get("O"));
+            }else{
+                agentO.add(agent.getMaxReward().get("O"));
+                agent2X.add(agent2.getMaxReward().get("X"));
+            }
         }
     }
 
@@ -151,15 +172,61 @@ public class TicTacToe {
         this.agent2 = agent2;
     }
 
+    public void printPlot() throws IOException {
+        XYPlot plotX = new XYPlot();
+        XYPlot plotO = new XYPlot();
+        DefaultXYDataset datasetX = new DefaultXYDataset();
+        DefaultXYDataset datasetO = new DefaultXYDataset();
+        double[][] seriesX = new double[2][agentX.size()];
+        for(int i = 0; i < agentX.size(); i++){
+            seriesX[0][i] = i;
+            seriesX[1][i] = agentX.get(i);
+        }
+        double[][] seriesX2 = new double[2][agent2X.size()];
+        for(int i = 0; i < agent2X.size(); i++){
+            seriesX2[0][i] = i;
+            seriesX2[1][i] = agent2X.get(i);
+        }
+        datasetX.addSeries("agent1X", seriesX);
+        datasetX.addSeries("agent2X", seriesX2);
+        plotX.setDataset(datasetX);
+        File file = new File("D:\\java_new\\XO\\plotX.png");
+        ChartUtils.saveChartAsPNG(file, ChartFactory
+                .createXYLineChart("", "Reward", "Iterations",
+                        datasetX,
+                        PlotOrientation.VERTICAL,
+                        true, true, true), 600, 600);
+        double[][] seriesO = new double[2][agentO.size()];
+        for(int i = 0; i < agentO.size(); i++){
+            seriesO[0][i] = i;
+            seriesO[1][i] = agentO.get(i);
+        }
+        double[][] seriesO2 = new double[2][agent2O.size()];
+        for(int i = 0; i < agent2O.size(); i++){
+            seriesO2[0][i] = i;
+            seriesO2[1][i] = agent2O.get(i);
+        }
+        datasetO.addSeries("agent1O", seriesO);
+        datasetO.addSeries("agent2O", seriesO2);
+        plotO.setDataset(datasetO);
+        File file2 = new File("D:\\java_new\\XO\\plotO.png");
+        ChartUtils.saveChartAsPNG(file2, ChartFactory
+                .createXYLineChart("", "Reward", "Iterations",
+                        datasetO,
+                        PlotOrientation.VERTICAL,
+                        true, true, true), 600, 600);
+    }
+
     public static void main(String[] args) throws InterruptedException, IOException, ClassNotFoundException {
         TicTacToe toe = new TicTacToe();
-        toe.training(20000);
+        toe.training(100);
         System.out.println("Agent");
         toe.agent.printStats();
         System.out.println("Agent2");
         toe.agent2.printStats();
         toe.saveAgent("Agent.ser", toe.getAgent());
         toe.saveAgent("Agent2.ser", toe.getAgent2());
-        toe.runGameWithAgent(toe.getAgent());
+        //toe.runGameWithAgent(toe.getAgent());
+        toe.printPlot();
     }
 }

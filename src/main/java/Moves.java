@@ -3,7 +3,7 @@ import java.math.BigInteger;
 
 public class Moves implements Serializable {
     private BigInteger move;
-    private int weight;
+    private double weight;
 
     public Moves(BigInteger move){
         this.move = move;
@@ -22,11 +22,11 @@ public class Moves implements Serializable {
         this.move = move;
     }
 
-    public int getWeight() {
+    public double getWeight() {
         return weight;
     }
 
-    public void setWeight(int wight) {
+    public void setWeight(double wight) {
         this.weight = wight;
     }
 

@@ -5,7 +5,9 @@ import org.jgrapht.graph.DirectedWeightedMultigraph;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 
@@ -14,30 +16,32 @@ public class Agent implements Serializable {
     private DirectedWeightedMultigraph<Moves, DefaultWeightedEdge> oMoves = new DirectedWeightedMultigraph<Moves, DefaultWeightedEdge>(DefaultWeightedEdge.class);
     private TTTPiece piece;
     private BigInteger moves;
+    private double LEARNING_RATE;
     private int chance;
     private int[] random;
     private int wins = 0;
     private int lose = 0;
 
-    public Agent(int chance){
+    public Agent(int chance, double learning) {
         this.chance = chance;
+        this.LEARNING_RATE = learning;
         fillRandom();
     }
 
-    private void fillRandom(){
+    private void fillRandom() {
         int[] random = new int[100];
-        for(int i = 0; i < 100 - chance; i++){
+        for (int i = 0; i < 100 - chance; i++) {
             random[i] = 1;
         }
-        for(int i = 100 - chance; i < 100; i++){
+        for (int i = 100 - chance; i < 100; i++) {
             random[i] = 0;
         }
         this.random = random;
     }
 
-    private int random(){
+    private int random() {
         int number = (int) (Math.random() * 100);
-        while(number == 100){
+        while (number == 100) {
             number = (int) (Math.random() * 100);
         }
         return this.random[number];
@@ -59,19 +63,19 @@ public class Agent implements Serializable {
         this.piece = piece;
     }
 
-    private void saveMovesX(){
+    private void saveMovesX() {
         Moves currentMoves = new Moves(moves);
-        if(!xMoves.containsVertex(currentMoves)){
+        if (!xMoves.containsVertex(currentMoves)) {
             xMoves.addVertex(currentMoves);
-            if(xMoves.vertexSet().size() > 1 && !moves.divide(BigInteger.valueOf(10)).equals(BigInteger.valueOf(0))) {
+            if (xMoves.vertexSet().size() > 1 && !moves.divide(BigInteger.valueOf(10)).equals(BigInteger.valueOf(0))) {
                 List<Moves> previousMoves = xMoves.vertexSet().stream().toList();
                 try {
                     Moves previousMove = previousMoves.stream().filter(o -> o.getMove().equals(moves.divide(BigInteger.valueOf(10)))).findFirst().get();
                     xMoves.addEdge(previousMove, currentMoves);
-                }catch (Exception e){
+                } catch (Exception e) {
                     System.out.println(currentMoves.getMove());
                     List<BigInteger> list = previousMoves.stream().map(o -> o.getMove()).collect(Collectors.toList());
-                    for(BigInteger o : list){
+                    for (BigInteger o : list) {
                         System.out.print(o + " ");
                     }
                     System.out.println(wins + " " + lose);
@@ -81,11 +85,11 @@ public class Agent implements Serializable {
         }
     }
 
-    private void saveMovesO(){
+    private void saveMovesO() {
         Moves currentMoves = new Moves(moves);
-        if(!oMoves.containsVertex(currentMoves)){
+        if (!oMoves.containsVertex(currentMoves)) {
             oMoves.addVertex(currentMoves);
-            if(oMoves.vertexSet().size() > 1 && !moves.divide(BigInteger.valueOf(10)).equals(BigInteger.valueOf(0))) {
+            if (oMoves.vertexSet().size() > 1 && !moves.divide(BigInteger.valueOf(10)).equals(BigInteger.valueOf(0))) {
                 List<Moves> previousMoves = oMoves.vertexSet().stream().toList();
                 Moves previousMove = previousMoves.stream().filter(o -> o.getMove().equals(moves.divide(BigInteger.valueOf(10)))).findFirst().get();
                 oMoves.addEdge(previousMove, currentMoves);
@@ -93,25 +97,25 @@ public class Agent implements Serializable {
         }
     }
 
-    private int computeX(TTTBoard board){
+    private int computeX(TTTBoard board) {
         Moves currentMoves = xMoves.vertexSet().stream().filter(o -> o.getMove().equals(moves)).findFirst().get();
         Moves nextMove;
         List<Moves> nextMoves = xMoves.outgoingEdgesOf(currentMoves).stream().map(o -> (xMoves.getEdgeTarget(o))).collect(Collectors.toList());
-        DefaultWeightedEdge edge = nextMoves.stream()
-                .map(o -> xMoves.getEdge(currentMoves, o))
-                .max((o1, o2) -> {if(xMoves.getEdgeWeight(o1) - xMoves.getEdgeWeight(o2) > 0){
-                    return 1;
-                }else{
-                    if(xMoves.getEdgeWeight(o1) - xMoves.getEdgeWeight(o2) < 0){
-                        return -1;
-                    }
-                }
-                    return 0;
-                }).get();
-        if(random() == 1){
-            nextMove = xMoves.getEdgeTarget(edge);
+        nextMoves.removeIf(o -> !board.getLegalMoves().contains(o.getMove().mod(BigInteger.valueOf(10)).intValue()));
+        if (!nextMoves.isEmpty() && random() == 1) {
+            nextMove = nextMoves.stream()
+                    .max(((o1, o2) -> {
+                        if (o1.getWeight() - o2.getWeight() > 0) {
+                            return 1;
+                        } else {
+                            if (o1.getWeight() - o2.getWeight() < 0) {
+                                return -1;
+                            }
+                        }
+                        return 0;
+                    })).get();
             return nextMove.getMove().mod(BigInteger.valueOf(10)).intValue();
-        }else{
+        } else {
             ArrayList<Moves> newMovies = new ArrayList<>(xMoves.outgoingEdgesOf(currentMoves).stream().map(o -> (xMoves.getEdgeTarget(o))).collect(Collectors.toList()));
             List<Integer> newMoviess = newMovies.stream()
                     .map(Moves::getMove)
@@ -120,34 +124,33 @@ public class Agent implements Serializable {
                     .collect(Collectors.toList());
             newMoviess.addAll(board.getLegalMoves().stream().map(o -> o = o + 1).collect(Collectors.toList()));
             int move = (int) (Math.random() * newMoviess.size());
-            while(move == 0){
+            while (move == 0) {
                 move = (int) (Math.random() * newMoviess.size());
             }
             return newMoviess.get(move);
         }
     }
 
-    private int computeO(TTTBoard board){
+    private int computeO(TTTBoard board) {
         Moves currentMoves = oMoves.vertexSet().stream().filter(o -> o.getMove().equals(moves)).findFirst().get();
         Moves nextMove;
         List<Moves> nextMoves = oMoves.outgoingEdgesOf(currentMoves).stream().map(o -> (oMoves.getEdgeTarget(o))).collect(Collectors.toList());
-        DefaultWeightedEdge edge = nextMoves.stream()
-                .map(o -> oMoves.getEdge(currentMoves, o))
-                .max((o1, o2) -> {if(oMoves.getEdgeWeight(o1) - oMoves.getEdgeWeight(o2) > 0){
-                    return 1;
-                }else{
-                    if(oMoves.getEdgeWeight(o1) - oMoves.getEdgeWeight(o2) < 0){
-                        return -1;
-                    }
-                }
-                    return 0;
-                }).get();
-        if(random() == 1){
-            nextMove = oMoves.getEdgeTarget(edge);
+        nextMoves.removeIf(o -> !board.getLegalMoves().contains(o.getMove().mod(BigInteger.valueOf(10)).intValue()));
+        if (!nextMoves.isEmpty() && random() == 1) {
+            nextMove = nextMoves.stream()
+                    .max(((o1, o2) -> {
+                        if (o1.getWeight() - o2.getWeight() > 0) {
+                            return 1;
+                        } else {
+                            if (o1.getWeight() - o2.getWeight() < 0) {
+                                return -1;
+                            }
+                        }
+                        return 0;
+                    })).get();
             return nextMove.getMove().mod(BigInteger.valueOf(10)).intValue();
-        }else{
+        } else {
             ArrayList<Moves> newMovies = new ArrayList<>(oMoves.outgoingEdgesOf(currentMoves).stream().map(o -> (oMoves.getEdgeTarget(o))).collect(Collectors.toList()));
-            //newMovies.remove(oMoves.getEdgeTarget(edge));
             List<Integer> newMoviess = newMovies.stream()
                     .map(Moves::getMove)
                     .map(o -> o.mod(BigInteger.valueOf(10)))
@@ -155,78 +158,100 @@ public class Agent implements Serializable {
                     .collect(Collectors.toList());
             newMoviess.addAll(board.getLegalMoves().stream().map(o -> o = o + 1).collect(Collectors.toList()));
             int move = (int) (Math.random() * newMoviess.size());
-            while(move == 0){
+            while (move == 0) {
                 move = (int) (Math.random() * newMoviess.size());
             }
             return newMoviess.get(move);
         }
     }
 
-    public void recalculateX(TTTBoard board){
+    public void recalculateX(TTTBoard board) {
         int result = board.result(this.piece);
         List<Moves> Moves = xMoves.vertexSet().stream().toList();
-        if(result > 0){
-            while(!moves.equals(BigInteger.valueOf(0)) && !moves.divide(BigInteger.valueOf(10)).equals(BigInteger.valueOf(0))){
+        if (result > 0) {
+            Moves finishMove = Moves.stream().filter(o -> o.getMove().equals(moves)).findFirst().get();
+            finishMove.setWeight(1.0);
+            while (!moves.equals(BigInteger.valueOf(0)) && !moves.divide(BigInteger.valueOf(10)).equals(BigInteger.valueOf(0))) {
 
                 Moves previousMove = Moves.stream().filter(o -> o.getMove().equals(moves.divide(BigInteger.valueOf(10)))).findFirst().get();
                 Moves currentMove = Moves.stream().filter(o -> o.getMove().equals(moves)).findFirst().get();
+
+                double recalculate = previousMove.getWeight() + LEARNING_RATE * (currentMove.getWeight() - previousMove.getWeight());
+                previousMove.setWeight(recalculate);
 
                 xMoves.setEdgeWeight(previousMove, currentMove, xMoves.getEdgeWeight(xMoves.getEdge(previousMove, currentMove)) + 1.0);
                 moves = moves.divide(BigInteger.valueOf(10));
 
             }
             wins++;
-        }else{
-            if(result < 0) {
-                while (!moves.equals(BigInteger.valueOf(0)) && !moves.divide(BigInteger.valueOf(10)).equals(BigInteger.valueOf(0))) {
-                    Moves previousMove = Moves.stream().filter(o -> o.getMove().equals(moves.divide(BigInteger.valueOf(10)))).findFirst().get();
-                    Moves currentMove = Moves.stream().filter(o -> o.getMove().equals(moves)).findFirst().get();
+        } else {
+            Moves finishMove = Moves.stream().filter(o -> o.getMove().equals(moves)).findFirst().get();
+            finishMove.setWeight(0.5);
+            while (!moves.equals(BigInteger.valueOf(0)) && !moves.divide(BigInteger.valueOf(10)).equals(BigInteger.valueOf(0))) {
+                Moves previousMove = Moves.stream().filter(o -> o.getMove().equals(moves.divide(BigInteger.valueOf(10)))).findFirst().get();
+                Moves currentMove = Moves.stream().filter(o -> o.getMove().equals(moves)).findFirst().get();
 
-                    xMoves.setEdgeWeight(previousMove, currentMove, xMoves.getEdgeWeight(xMoves.getEdge(previousMove, currentMove)) - 1.0);
-                    moves = moves.divide(BigInteger.valueOf(10));
+                double recalculate = previousMove.getWeight() + LEARNING_RATE * (currentMove.getWeight() - previousMove.getWeight());
+                previousMove.setWeight(recalculate);
 
-                }
+                xMoves.setEdgeWeight(previousMove, currentMove, xMoves.getEdgeWeight(xMoves.getEdge(previousMove, currentMove)) - 1.0);
+                moves = moves.divide(BigInteger.valueOf(10));
+
+            }
+            if (result < 0) {
                 lose++;
             }
+
         }
         moves = null;
     }
 
-    public void recalculateO(TTTBoard board){
+    public void recalculateO(TTTBoard board) {
         int result = board.result(this.piece);
         List<Moves> Moves = oMoves.vertexSet().stream().toList();
-        if(result > 0){
-            while(!moves.equals(BigInteger.valueOf(0)) && !moves.divide(BigInteger.valueOf(10)).equals(BigInteger.valueOf(0))){
+        if (result > 0) {
+            Moves finishMove = Moves.stream().filter(o -> o.getMove().equals(moves)).findFirst().get();
+            finishMove.setWeight(1.0);
+            while (!moves.equals(BigInteger.valueOf(0)) && !moves.divide(BigInteger.valueOf(10)).equals(BigInteger.valueOf(0))) {
 
                 Moves previousMove = Moves.stream().filter(o -> o.getMove().equals(moves.divide(BigInteger.valueOf(10)))).findFirst().get();
                 Moves currentMove = Moves.stream().filter(o -> o.getMove().equals(moves)).findFirst().get();
+
+                double recalculate = previousMove.getWeight() + LEARNING_RATE * (currentMove.getWeight() - previousMove.getWeight());
+                previousMove.setWeight(recalculate);
 
                 oMoves.setEdgeWeight(previousMove, currentMove, oMoves.getEdgeWeight(oMoves.getEdge(previousMove, currentMove)) + 1.0);
                 moves = moves.divide(BigInteger.valueOf(10));
 
             }
             wins++;
-        }else{
-            if(result < 0) {
-                while (!moves.equals(BigInteger.valueOf(0)) && !moves.divide(BigInteger.valueOf(10)).equals(BigInteger.valueOf(0))) {
-                    Moves previousMove = Moves.stream().filter(o -> o.getMove().equals(moves.divide(BigInteger.valueOf(10)))).findFirst().get();
-                    Moves currentMove = Moves.stream().filter(o -> o.getMove().equals(moves)).findFirst().get();
+        } else {
+            Moves finishMove = Moves.stream().filter(o -> o.getMove().equals(moves)).findFirst().get();
+            finishMove.setWeight(0.5);
+            while (!moves.equals(BigInteger.valueOf(0)) && !moves.divide(BigInteger.valueOf(10)).equals(BigInteger.valueOf(0))) {
+                Moves previousMove = Moves.stream().filter(o -> o.getMove().equals(moves.divide(BigInteger.valueOf(10)))).findFirst().get();
+                Moves currentMove = Moves.stream().filter(o -> o.getMove().equals(moves)).findFirst().get();
 
-                    oMoves.setEdgeWeight(previousMove, currentMove, oMoves.getEdgeWeight(oMoves.getEdge(previousMove, currentMove)) - 1.0);
-                    moves = moves.divide(BigInteger.valueOf(10));
-                }
+                double recalculate = previousMove.getWeight() + LEARNING_RATE * (currentMove.getWeight() - previousMove.getWeight());
+                previousMove.setWeight(recalculate);
+
+                oMoves.setEdgeWeight(previousMove, currentMove, oMoves.getEdgeWeight(oMoves.getEdge(previousMove, currentMove)) - 1.0);
+                moves = moves.divide(BigInteger.valueOf(10));
+
+            }
+            if (result < 0) {
                 lose++;
             }
         }
         moves = null;
     }
 
-    public int move(TTTBoard board){
-        if(this.piece.equals(TTTPiece.X)) {
+    public int move(TTTBoard board) {
+        if (this.piece.equals(TTTPiece.X)) {
             List<Integer> legalMoves = board.getLegalMoves();
             Moves currentMoves = new Moves(moves);
             int move;
-            if (moves !=null && xMoves.containsVertex(currentMoves) && !xMoves.outgoingEdgesOf(currentMoves).stream().map(o -> (xMoves.getEdgeTarget(o))).collect(Collectors.toList()).isEmpty()) {
+            if (moves != null && xMoves.containsVertex(currentMoves) && !xMoves.outgoingEdgesOf(currentMoves).stream().map(o -> (xMoves.getEdgeTarget(o))).collect(Collectors.toList()).isEmpty()) {
                 move = computeX(board);
                 moves = moves.multiply(BigInteger.valueOf(10));
                 moves = moves.add(BigInteger.valueOf(move));
@@ -253,7 +278,7 @@ public class Agent implements Serializable {
                 }
             }
             return move;
-        }else{
+        } else {
             List<Integer> legalMoves = board.getLegalMoves();
             Moves currentMoves = new Moves(moves);
             int move;
@@ -287,7 +312,22 @@ public class Agent implements Serializable {
         }
     }
 
-    public void printStats(){
+    public Map<String, Double> getMaxReward(){
+        double maxX = 1.0;
+        double maxO = 1.0;
+        if(!xMoves.vertexSet().isEmpty()) {
+            maxX = xMoves.vertexSet().stream().map(Moves::getWeight).distinct().filter(o -> o != 1.0).max(Double::compareTo).get();
+        }
+        if(!oMoves.vertexSet().isEmpty()) {
+            maxO = oMoves.vertexSet().stream().map(Moves::getWeight).distinct().filter(o -> o != 1.0).max(Double::compareTo).get();
+        }
+        Map<String, Double> result = new HashMap<>();
+        result.put("X", maxX);
+        result.put("O", maxO);
+        return result;
+    }
+
+    public void printStats() {
         System.out.println("Wins: " + wins);
         System.out.println("Lose: " + lose);
     }
