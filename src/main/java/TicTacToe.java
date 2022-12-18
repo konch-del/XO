@@ -219,7 +219,7 @@ public class TicTacToe {
 
     public static void main(String[] args) throws InterruptedException, IOException, ClassNotFoundException {
         TicTacToe toe = new TicTacToe();
-        toe.training(100);
+        toe.training(10000);
         System.out.println("Agent");
         toe.agent.printStats();
         System.out.println("Agent2");
